@@ -21,6 +21,11 @@ from torch import nn
 import torchvision
 from torchvision import transforms
 
+# Check if we're using pytorch 2 for those speedups
+using_pytorch_2 = (int(torch.__version__.split('.')[0]) >= 2)
+if not using_pytorch_2:
+    print("Info: Pytorch 2.0 isn't currently installed. Falling back to slower Pytorch 1.x pathway.")
+    
 ## <-- teaching comments
 # <-- functional comments
 # You can run 'sed -i.bak '/\#\#/d' ./main.py' to remove the teaching comments if they are in the way of your work. <3
@@ -349,6 +354,9 @@ def make_net():
     net = SpeedyResNet(network_dict)
     net = net.to(hyp['misc']['device'])
     net = net.to(memory_format=torch.channels_last) # to appropriately use tensor cores/avoid thrash while training
+    # Since we're dynamically changing the sequence length during training, we've turned off the compiling since that's faster for now.
+    if False: #using_pytorch_2:
+        net = torch.compile(net)
     net.train()
     net.half() # Convert network to half before initializing the initial whitening layer.
 
